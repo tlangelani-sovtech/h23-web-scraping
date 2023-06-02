@@ -15,7 +15,6 @@ let page;
 
 async function shopriteWebScraper(barcode) {
     console.log('Scraping Shoprite');
-    // const browser = await puppeteer.launch({});
     page = await browser.newPage();
  
     await page.goto(`https://www.shoprite.co.za/search/all?q=${barcode}`);
@@ -24,21 +23,24 @@ async function shopriteWebScraper(barcode) {
         visible: true
     });
     let productURL = await page.evaluate(product => product.querySelector('.product-listening-click').href, product);
+    let productName = await page.evaluate(product => product.querySelector('.item-product__name').textContent, product);
     const productList = await page.waitForSelector('.productListJSON');
-    const list = await page.evaluate(l => l.textContent, productList);
-    
-    // browser.close();
+    let list = await page.evaluate(l => l.textContent, productList);
+    list = JSON.parse(list)[0];
+
+    console.log(list);
 
     return {
         productURL,
-        data: JSON.parse(list),
+        productName,
+        price: list.price.value,
     }
 };
 
 async function checkersWebScraper(barcode) {
     console.log('Scraping Checkers');
-    // const browser = await puppeteer.launch({});
-    page = await browser.newPage();
+    const browser = await puppeteer.launch({});
+    const page = await browser.newPage();
  
     await page.goto(`https://www.checkers.co.za/search/all?q=${barcode}`);
     
@@ -46,15 +48,17 @@ async function checkersWebScraper(barcode) {
         timeout: '50000',
         visible: true
     });
-    let productURL = await page.evaluate(product => product.querySelector('.product-listening-click').href, product);
-    const productList = await page.waitForSelector('.productListJSON');
-    const list = await page.evaluate(l => l.textContent, productList);
+    let url = await page.evaluate(product => product.querySelector('.product-listening-click').href, product);
+    // let title = await page.evaluate(product => product.querySelector('.item-product__name').textContent, product);
+    // const productList = await page.waitForSelector('.productListJSON');
+    // const list = await page.evaluate(l => l.textContent, productList);
     
-    // browser.close();
+    browser.close();
 
     return {
-        productURL,
-        data: JSON.parse(list),
+        url,
+        // title
+        // data: JSON.parse(list),
     }
 };
 
@@ -82,7 +86,10 @@ async function pnpWebScraper(title) {
 app.post('/search', async (req, res) => {
     const { barcode, title } = req.body;
 
-    browser = await puppeteer.launch({});
+    browser = await puppeteer.launch({
+        headless: true,
+        ignoreHTTPSErrors: true,
+    });
 
     if (_.isEmpty(barcode)) {
         return res.status(400).json({

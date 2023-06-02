@@ -20,7 +20,8 @@ async function shopriteWebScraper(barcode) {
     await page.goto(`https://www.shoprite.co.za/search/all?q=${barcode}`);
     
     const product = await page.waitForSelector('.product-frame', {
-        visible: true
+        visible: true,
+        timeout: 50000,
     });
     let productURL = await page.evaluate(product => product.querySelector('.product-listening-click').href, product);
     let productName = await page.evaluate(product => product.querySelector('.item-product__name').textContent, product);
